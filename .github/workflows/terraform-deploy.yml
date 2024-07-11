@@ -37,6 +37,6 @@ jobs:
         run: terraform init
         working-directory: ./terraform
 
-      - name: Terraform ${command}
-        run: terraform ${command} -auto-approve
+      - name: Run Terraform command
+        run: terraform ${{ github.event.inputs.command }} -auto-approve
         working-directory: ./terraform
