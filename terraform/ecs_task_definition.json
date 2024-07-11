@@ -1,0 +1,15 @@
+[
+  {
+    "name": "conttapp-container",
+    "image": "${aws_account_id}.dkr.ecr.${aws_region}.amazonaws.com/conttapp:latest",
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "hostPort": 80
+      }
+    ],
+    "memory": 512,
+    "cpu": 256
+  }
+]
