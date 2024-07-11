@@ -36,5 +36,3 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/conttapp:latest
-
-
