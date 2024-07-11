@@ -2,6 +2,27 @@ provider "aws" {
   region = "eu-north-1"
 }
 
+resource "aws_vpc" "vpc_0_0" {
+  cidr_block           = "10.10.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "0_0_VPC"
+  }
+}
+
+resource "aws_subnet" "subnet_10_0" {
+  vpc_id                  = aws_vpc.vpc_0_0.id
+  cidr_block              = "10.10.10.0/24"
+  availability_zone       = "eu-north-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Subnet_10_0_24"
+  }
+}
+
 resource "aws_ecs_cluster" "main" {
   name = "conttapp-cluster"
 }
@@ -44,21 +65,21 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 resource "aws_security_group" "alb" {
   name        = "allow-http"
   description = "Allow HTTP inbound traffic"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.vpc_0_0.id
 
   ingress {
-    description      = "HTTP from VPC"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    description = "HTTP from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -67,14 +88,14 @@ resource "aws_lb" "main" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = var.public_subnets
+  subnets            = [aws_subnet.subnet_10_0.id]
 }
 
 resource "aws_lb_target_group" "main" {
   name        = "conttapp-tg"
   port        = 80
   protocol    = "HTTP"
-  vpc_id      = var.vpc_id
+  vpc_id      = aws_vpc.vpc_0_0.id
   target_type = "ip"
 }
 
@@ -97,7 +118,7 @@ resource "aws_ecs_service" "main" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = var.public_subnets
+    subnets         = [aws_subnet.subnet_10_0.id]
     security_groups = [aws_security_group.alb.id]
   }
 
