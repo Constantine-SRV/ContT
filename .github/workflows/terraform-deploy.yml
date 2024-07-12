@@ -34,7 +34,7 @@ jobs:
           aws-region: eu-north-1
 
       - name: Initialize Terraform
-        run: terraform init
+        run: terraform init -backend-config="bucket=constantine-z" -backend-config="region=eu-north-1" -backend-config="key=tfcontt.tfstate" -backend-config="encrypt=true"
         working-directory: ./terraform
 
       - name: Run Terraform command
