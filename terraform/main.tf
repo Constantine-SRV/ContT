@@ -78,6 +78,19 @@ resource "aws_ecs_cluster" "main" {
   name = "conttapp-cluster"
 }
 
+# Output variables for debugging
+output "aws_account_id" {
+  value = data.aws_caller_identity.current.account_id
+}
+
+output "aws_region" {
+  value = data.aws_region.current.name
+}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
+
 resource "aws_ecs_task_definition" "main" {
   family                   = "conttapp-task"
   network_mode             = "awsvpc"
@@ -85,7 +98,7 @@ resource "aws_ecs_task_definition" "main" {
   cpu                      = "256"
   memory                   = "512"
 
-  container_definitions = file("ecs_task_definition.json")
+  container_definitions = file("${path.module}/ecs_task_definition.json")
 
   execution_role_arn = "arn:aws:iam::637423446150:role/ecsTaskExecutionRole"
   task_role_arn      = "arn:aws:iam::637423446150:role/ecsTaskRole"
@@ -154,7 +167,7 @@ resource "aws_ecs_service" "main" {
   load_balancer {
     target_group_arn = aws_lb_target_group.main.arn
     container_name   = "conttapp-container"
-    container_port   = 80
+    container_port   = 8080
   }
 
   depends_on = [aws_lb_listener.http]
