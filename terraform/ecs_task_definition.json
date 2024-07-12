@@ -1,7 +1,7 @@
 [
   {
     "name": "conttapp-container",
-    "image": "${aws_account_id}.dkr.ecr.${aws_region}.amazonaws.com/conttapp:latest",
+    "image": "637423446150.dkr.ecr.eu-north-1.amazonaws.com/conttapp:latest",
     "essential": true,
     "portMappings": [
       {
