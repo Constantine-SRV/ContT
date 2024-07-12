@@ -43,6 +43,37 @@ resource "aws_subnet" "subnet_20_0" {
   }
 }
 
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.vpc_0_0.id
+
+  tags = {
+    Name = "InternetGateway"
+  }
+}
+
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.vpc_0_0.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "PublicRouteTable"
+  }
+}
+
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.subnet_10_0.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "b" {
+  subnet_id      = aws_subnet.subnet_20_0.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
 resource "aws_ecs_cluster" "main" {
   name = "conttapp-cluster"
 }
@@ -90,7 +121,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "main" {
-  name        = "conttapp-tg"
+  name        = "conttapp-tg-new"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_vpc.vpc_0_0.id
