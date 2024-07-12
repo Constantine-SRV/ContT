@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket         = "constantine-z"
+    region         = "eu-north-1"
+    # dynamodb_table = "terraform-locks"
+    encrypt        = true
+    key            = "tfcontt.tfstate"
+  }
+}
+
 provider "aws" {
   region = "eu-north-1"
 }
@@ -20,6 +30,17 @@ resource "aws_subnet" "subnet_10_0" {
 
   tags = {
     Name = "Subnet_10_0_24"
+  }
+}
+
+resource "aws_subnet" "subnet_20_0" {
+  vpc_id                  = aws_vpc.vpc_0_0.id
+  cidr_block              = "10.10.20.0/24"
+  availability_zone       = "eu-north-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Subnet_20_0_24"
   }
 }
 
@@ -88,7 +109,7 @@ resource "aws_lb" "main" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = [aws_subnet.subnet_10_0.id]
+  subnets            = [aws_subnet.subnet_10_0.id, aws_subnet.subnet_20_0.id]
 }
 
 resource "aws_lb_target_group" "main" {
@@ -118,7 +139,7 @@ resource "aws_ecs_service" "main" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.subnet_10_0.id]
+    subnets         = [aws_subnet.subnet_10_0.id, aws_subnet.subnet_20_0.id]
     security_groups = [aws_security_group.alb.id]
   }
 
