@@ -78,19 +78,6 @@ resource "aws_ecs_cluster" "main" {
   name = "conttapp-cluster"
 }
 
-# Output variables for debugging
-output "aws_account_id" {
-  value = data.aws_caller_identity.current.account_id
-}
-
-output "aws_region" {
-  value = data.aws_region.current.name
-}
-
-data "aws_caller_identity" "current" {}
-
-data "aws_region" "current" {}
-
 resource "aws_ecs_task_definition" "main" {
   family                   = "conttapp-task"
   network_mode             = "awsvpc"
@@ -98,7 +85,21 @@ resource "aws_ecs_task_definition" "main" {
   cpu                      = "256"
   memory                   = "512"
 
-  container_definitions = file("${path.module}/ecs_task_definition.json")
+  container_definitions = jsonencode([
+    {
+      name      = "conttapp-container"
+      image     = "637423446150.dkr.ecr.eu-north-1.amazonaws.com/conttapp:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+        }
+      ]
+      memory = 512
+      cpu    = 256
+    }
+  ])
 
   execution_role_arn = "arn:aws:iam::637423446150:role/ecsTaskExecutionRole"
   task_role_arn      = "arn:aws:iam::637423446150:role/ecsTaskRole"
@@ -134,7 +135,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "main" {
-  name        = "conttapp-tg-new"
+  name        = "conttapp-tg"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_vpc.vpc_0_0.id
