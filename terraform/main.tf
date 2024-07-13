@@ -63,7 +63,7 @@ resource "aws_route_table_association" "simple_rta" {
   route_table_id = aws_route_table.simple_rt.id
 }
 
-# Security Group
+# Security Group for ECS
 resource "aws_security_group" "simple_sg" {
   vpc_id      = aws_vpc.simple_vpc.id
   name        = "simple_sg"
@@ -72,6 +72,27 @@ resource "aws_security_group" "simple_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group for EC2
+resource "aws_security_group" "ec2_sg" {
+  vpc_id      = aws_vpc.simple_vpc.id
+  name        = "ec2_sg"
+  description = "Allow SSH traffic"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -143,6 +164,12 @@ resource "aws_iam_role" "ecsTaskRole" {
   }
 }
 
+# CloudWatch Log Group
+resource "aws_cloudwatch_log_group" "ecs_log_group" {
+  name = "/ecs/simple-container"
+  retention_in_days = 7
+}
+
 # ECS Cluster
 resource "aws_ecs_cluster" "simple_cluster" {
   name = "simple-cluster"
@@ -167,6 +194,14 @@ resource "aws_ecs_task_definition" "simple_task" {
           hostPort      = 80
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_log_group.name
+          "awslogs-region"        = "eu-north-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
       memory = 512
       cpu    = 256
     }
@@ -187,5 +222,19 @@ resource "aws_ecs_service" "simple_service" {
   network_configuration {
     subnets         = [aws_subnet.simple_subnet.id]
     security_groups = [aws_security_group.simple_sg.id]
+    assign_public_ip = true
+  }
+}
+
+# EC2 Instance
+resource "aws_instance" "test_instance" {
+  ami             = "ami-0705384c0b33c194c"
+  instance_type   = "t3.micro"
+  subnet_id       = aws_subnet.simple_subnet.id
+  key_name        = "pair-key"
+  security_groups = [aws_security_group.ec2_sg.name]
+
+  tags = {
+    Name = "test_instance"
   }
 }
