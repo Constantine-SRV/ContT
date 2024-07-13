@@ -232,7 +232,7 @@ resource "aws_instance" "test_instance" {
   instance_type   = "t3.micro"
   subnet_id       = aws_subnet.simple_subnet.id
   key_name        = "pair-key"
-  security_groups = [aws_security_group.ec2_sg.name]
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
 
   tags = {
     Name = "test_instance"
