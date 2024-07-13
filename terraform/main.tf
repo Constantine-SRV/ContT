@@ -11,6 +11,7 @@ provider "aws" {
   region = "eu-north-1"
 }
 
+# VPC
 resource "aws_vpc" "simple_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -21,6 +22,7 @@ resource "aws_vpc" "simple_vpc" {
   }
 }
 
+# Subnet
 resource "aws_subnet" "simple_subnet" {
   vpc_id                  = aws_vpc.simple_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -32,6 +34,7 @@ resource "aws_subnet" "simple_subnet" {
   }
 }
 
+# Internet Gateway
 resource "aws_internet_gateway" "simple_igw" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -40,6 +43,7 @@ resource "aws_internet_gateway" "simple_igw" {
   }
 }
 
+# Route Table
 resource "aws_route_table" "simple_rt" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -53,11 +57,13 @@ resource "aws_route_table" "simple_rt" {
   }
 }
 
+# Route Table Association
 resource "aws_route_table_association" "simple_rta" {
   subnet_id      = aws_subnet.simple_subnet.id
   route_table_id = aws_route_table.simple_rt.id
 }
 
+# Security Group
 resource "aws_security_group" "simple_sg" {
   vpc_id      = aws_vpc.simple_vpc.id
   name        = "simple_sg"
@@ -78,10 +84,71 @@ resource "aws_security_group" "simple_sg" {
   }
 }
 
+# IAM Role for ECS Task Execution
+resource "aws_iam_role" "ecsTaskExecutionRole" {
+  name = "ecsTaskExecutionRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+  ]
+}
+
+# IAM Role for ECS Task
+resource "aws_iam_role" "ecsTaskRole" {
+  name = "ecsTaskRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  inline_policy {
+    name   = "ecsTaskPolicy"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "ecr:GetAuthorizationToken",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage"
+          ]
+          Resource = "*"
+        }
+      ]
+    })
+  }
+}
+
+# ECS Cluster
 resource "aws_ecs_cluster" "simple_cluster" {
   name = "simple-cluster"
 }
 
+# ECS Task Definition
 resource "aws_ecs_task_definition" "simple_task" {
   family                   = "simple-task"
   network_mode             = "awsvpc"
@@ -109,6 +176,7 @@ resource "aws_ecs_task_definition" "simple_task" {
   task_role_arn      = aws_iam_role.ecsTaskRole.arn
 }
 
+# ECS Service
 resource "aws_ecs_service" "simple_service" {
   name            = "simple-service"
   cluster         = aws_ecs_cluster.simple_cluster.id
@@ -119,58 +187,5 @@ resource "aws_ecs_service" "simple_service" {
   network_configuration {
     subnets         = [aws_subnet.simple_subnet.id]
     security_groups = [aws_security_group.simple_sg.id]
-  }
-}
-
-resource "aws_iam_role" "ecsTaskExecutionRole" {
-  name = "ecsTaskExecutionRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-  ]
-}
-
-resource "aws_iam_role" "ecsTaskRole" {
-  name = "ecsTaskRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  inline_policy {
-    name   = "ecsTaskPolicy"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
-          ]
-          Resource = "*"
-        }
-      ]
-    })
   }
 }
