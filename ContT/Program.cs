@@ -8,6 +8,7 @@ namespace ContT
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("**** Container test app v-2024-07-14-01 ****");
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -34,8 +35,9 @@ namespace ContT
 
             app.MapBlazorHub();
             app.MapFallbackToPage("/_Host");
-
+           
             app.Run();
+           
         }
     }
 }
