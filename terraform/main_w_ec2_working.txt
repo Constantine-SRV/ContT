@@ -1,4 +1,17 @@
-# Настройка VPC
+terraform {
+  backend "s3" {
+    bucket         = "constantine-z"
+    region         = "eu-north-1"
+    encrypt        = true
+    key            = "tfcontt.tfstate"
+  }
+}
+
+provider "aws" {
+  region = "eu-north-1"
+}
+
+# VPC
 resource "aws_vpc" "simple_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -9,7 +22,7 @@ resource "aws_vpc" "simple_vpc" {
   }
 }
 
-# Настройка подсети
+# Subnet
 resource "aws_subnet" "simple_subnet" {
   vpc_id                  = aws_vpc.simple_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -21,7 +34,7 @@ resource "aws_subnet" "simple_subnet" {
   }
 }
 
-# Настройка Internet Gateway
+# Internet Gateway
 resource "aws_internet_gateway" "simple_igw" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -30,7 +43,7 @@ resource "aws_internet_gateway" "simple_igw" {
   }
 }
 
-# Настройка таблицы маршрутов
+# Route Table
 resource "aws_route_table" "simple_rt" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -44,13 +57,13 @@ resource "aws_route_table" "simple_rt" {
   }
 }
 
-# Ассоциация таблицы маршрутов с подсетью
+# Route Table Association
 resource "aws_route_table_association" "simple_rta" {
   subnet_id      = aws_subnet.simple_subnet.id
   route_table_id = aws_route_table.simple_rt.id
 }
 
-# Настройка группы безопасности для ECS
+# Security Group for ECS
 resource "aws_security_group" "simple_sg" {
   vpc_id      = aws_vpc.simple_vpc.id
   name        = "simple_sg"
@@ -71,7 +84,28 @@ resource "aws_security_group" "simple_sg" {
   }
 }
 
-# Настройка ролей IAM для ECS Task Execution
+# Security Group for EC2
+resource "aws_security_group" "ec2_sg" {
+  vpc_id      = aws_vpc.simple_vpc.id
+  name        = "ec2_sg"
+  description = "Allow SSH traffic"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecsTaskExecutionRole" {
   name = "ecsTaskExecutionRole"
   assume_role_policy = jsonencode({
@@ -92,7 +126,7 @@ resource "aws_iam_role" "ecsTaskExecutionRole" {
   ]
 }
 
-# Настройка ролей IAM для ECS Task
+# IAM Role for ECS Task
 resource "aws_iam_role" "ecsTaskRole" {
   name = "ecsTaskRole"
   assume_role_policy = jsonencode({
@@ -130,18 +164,18 @@ resource "aws_iam_role" "ecsTaskRole" {
   }
 }
 
-# Настройка CloudWatch Log Group
+# CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name = "/ecs/simple-container"
   retention_in_days = 7
 }
 
-# Настройка ECS Cluster
+# ECS Cluster
 resource "aws_ecs_cluster" "simple_cluster" {
   name = "simple-cluster"
 }
 
-# Настройка ECS Task Definition с логированием
+# ECS Task Definition
 resource "aws_ecs_task_definition" "simple_task" {
   family                   = "simple-task"
   network_mode             = "awsvpc"
@@ -177,7 +211,7 @@ resource "aws_ecs_task_definition" "simple_task" {
   task_role_arn      = aws_iam_role.ecsTaskRole.arn
 }
 
-# Настройка ECS Service
+# ECS Service
 resource "aws_ecs_service" "simple_service" {
   name            = "simple-service"
   cluster         = aws_ecs_cluster.simple_cluster.id
@@ -189,5 +223,18 @@ resource "aws_ecs_service" "simple_service" {
     subnets         = [aws_subnet.simple_subnet.id]
     security_groups = [aws_security_group.simple_sg.id]
     assign_public_ip = true
+  }
+}
+
+# EC2 Instance
+resource "aws_instance" "test_instance" {
+  ami             = "ami-0705384c0b33c194c"
+  instance_type   = "t3.micro"
+  subnet_id       = aws_subnet.simple_subnet.id
+  key_name        = "pair-key"
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  tags = {
+    Name = "test_instance"
   }
 }
