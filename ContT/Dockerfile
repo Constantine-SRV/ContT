@@ -15,7 +15,7 @@ WORKDIR /app
 COPY --from=build /out .
 
 # Задаем порт, который будет использоваться контейнером
-EXPOSE 8080
+EXPOSE 80
 
 # Запускаем приложение
 ENTRYPOINT ["dotnet", "ContT.dll"]

@@ -16,7 +16,7 @@ namespace ContT
             builder.Services.AddServerSideBlazor();
             builder.Services.AddSingleton<WeatherForecastService>();
 
-            builder.WebHost.UseUrls("http://*:8080");
+            builder.WebHost.UseUrls("http://*:80");
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
