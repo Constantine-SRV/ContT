@@ -11,7 +11,6 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-
 # Настройка VPC
 resource "aws_vpc" "simple_vpc" {
   cidr_block           = "10.0.0.0/16"
@@ -103,6 +102,7 @@ resource "aws_iam_role" "ecsTaskExecutionRole" {
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # Добавляем эту политику для поддержки ECS Exec
   ]
 }
 
@@ -191,13 +191,14 @@ resource "aws_ecs_task_definition" "simple_task" {
   task_role_arn      = aws_iam_role.ecsTaskRole.arn
 }
 
-# Настройка ECS Service
+# Настройка ECS Service с поддержкой exec
 resource "aws_ecs_service" "simple_service" {
-  name            = "simple-service"
-  cluster         = aws_ecs_cluster.simple_cluster.id
-  task_definition = aws_ecs_task_definition.simple_task.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                    = "simple-service"
+  cluster                 = aws_ecs_cluster.simple_cluster.id
+  task_definition         = aws_ecs_task_definition.simple_task.arn
+  desired_count           = 1
+  launch_type             = "FARGATE"
+  enable_execute_command  = true
 
   network_configuration {
     subnets         = [aws_subnet.simple_subnet.id]
