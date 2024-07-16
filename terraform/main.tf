@@ -135,7 +135,11 @@ resource "aws_iam_role" "ecsTaskRole" {
             "ecr:GetAuthorizationToken",
             "ecr:BatchCheckLayerAvailability",
             "ecr:GetDownloadUrlForLayer",
-            "ecr:BatchGetImage"
+            "ecr:BatchGetImage",
+            "ssmmessages:CreateControlChannel",
+            "ssmmessages:CreateDataChannel",
+            "ssmmessages:OpenControlChannel",
+            "ssmmessages:OpenDataChannel"
           ]
           Resource = "*"
         }
