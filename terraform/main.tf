@@ -1,3 +1,17 @@
+terraform {
+  backend "s3" {
+    bucket         = "constantine-z"
+    region         = "eu-north-1"
+    encrypt        = true
+    key            = "tfcontt.tfstate"
+  }
+}
+
+provider "aws" {
+  region = "eu-north-1"
+}
+
+
 # Настройка VPC
 resource "aws_vpc" "simple_vpc" {
   cidr_block           = "10.0.0.0/16"
