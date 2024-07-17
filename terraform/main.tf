@@ -11,7 +11,7 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Настройка VPC
+
 resource "aws_vpc" "simple_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -22,7 +22,7 @@ resource "aws_vpc" "simple_vpc" {
   }
 }
 
-# Настройка подсети
+
 resource "aws_subnet" "simple_subnet" {
   vpc_id                  = aws_vpc.simple_vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -34,7 +34,7 @@ resource "aws_subnet" "simple_subnet" {
   }
 }
 
-# Настройка Internet Gateway
+
 resource "aws_internet_gateway" "simple_igw" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -43,7 +43,7 @@ resource "aws_internet_gateway" "simple_igw" {
   }
 }
 
-# Настройка таблицы маршрутов
+
 resource "aws_route_table" "simple_rt" {
   vpc_id = aws_vpc.simple_vpc.id
 
@@ -57,13 +57,13 @@ resource "aws_route_table" "simple_rt" {
   }
 }
 
-# Ассоциация таблицы маршрутов с подсетью
+
 resource "aws_route_table_association" "simple_rta" {
   subnet_id      = aws_subnet.simple_subnet.id
   route_table_id = aws_route_table.simple_rt.id
 }
 
-# Настройка группы безопасности для ECS
+
 resource "aws_security_group" "simple_sg" {
   vpc_id      = aws_vpc.simple_vpc.id
   name        = "simple_sg"
@@ -84,7 +84,7 @@ resource "aws_security_group" "simple_sg" {
   }
 }
 
-# Настройка ролей IAM для ECS Task Execution
+
 resource "aws_iam_role" "ecsTaskExecutionRole" {
   name = "ecsTaskExecutionRole"
   assume_role_policy = jsonencode({
@@ -102,11 +102,11 @@ resource "aws_iam_role" "ecsTaskExecutionRole" {
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # Добавляем эту политику для поддержки ECS Exec
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # root console access
   ]
 }
 
-# Настройка ролей IAM для ECS Task
+
 resource "aws_iam_role" "ecsTaskRole" {
   name = "ecsTaskRole"
   assume_role_policy = jsonencode({
@@ -129,7 +129,7 @@ resource "aws_iam_role" "ecsTaskRole" {
       Statement = [
         {
           Effect = "Allow"
-          Action = [
+          Action = [ #log+root console access
             "logs:CreateLogStream",
             "logs:PutLogEvents",
             "ecr:GetAuthorizationToken",
@@ -148,18 +148,18 @@ resource "aws_iam_role" "ecsTaskRole" {
   }
 }
 
-# Настройка CloudWatch Log Group
+#loging
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name = "/ecs/simple-container"
   retention_in_days = 7
 }
 
-# Настройка ECS Cluster
+
 resource "aws_ecs_cluster" "simple_cluster" {
   name = "simple-cluster"
 }
 
-# Настройка ECS Task Definition с логированием
+
 resource "aws_ecs_task_definition" "simple_task" {
   family                   = "simple-task"
   network_mode             = "awsvpc"
@@ -178,7 +178,7 @@ resource "aws_ecs_task_definition" "simple_task" {
           hostPort      = 80
         }
       ]
-      logConfiguration = {
+      logConfiguration = { #loging
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs_log_group.name
@@ -195,14 +195,14 @@ resource "aws_ecs_task_definition" "simple_task" {
   task_role_arn      = aws_iam_role.ecsTaskRole.arn
 }
 
-# Настройка ECS Service с поддержкой exec
+
 resource "aws_ecs_service" "simple_service" {
   name                    = "simple-service"
   cluster                 = aws_ecs_cluster.simple_cluster.id
   task_definition         = aws_ecs_task_definition.simple_task.arn
   desired_count           = 1
   launch_type             = "FARGATE"
-  enable_execute_command  = true
+  enable_execute_command  = true #root console access
 
   network_configuration {
     subnets         = [aws_subnet.simple_subnet.id]
