@@ -202,7 +202,7 @@ resource "aws_ecs_service" "simple_service" {
   task_definition         = aws_ecs_task_definition.simple_task.arn
   desired_count           = 1
   launch_type             = "FARGATE"
-  enable_execute_command  = true #root console access
+ # enable_execute_command  = true #root console access
 
   network_configuration {
     subnets         = [aws_subnet.simple_subnet.id]
