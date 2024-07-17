@@ -6,7 +6,7 @@ This project demonstrates working with a C# container on AWS. It includes the fo
 2. **GitHub Action for Building and Publishing the Container Image to AWS**: [GitHub Action Workflow](https://github.com/Constantine-SRV/ContT/blob/master/.github/workflows/docker-build.yml)
 3. **GitHub Action for Terraform Deployment of the Container on AWS**: This includes enabling CloudWatch logging and root console access to the ECS cluster. [Terraform Deployment Workflow](https://github.com/Constantine-SRV/ContT/blob/master/.github/workflows/terraform-deploy.yml)
 
-## Setup and Access Information
+## Setup console access
 
 Refer to the following resources for setup and access information:
 - [AWS Knowledge Center](https://repost.aws/knowledge-center/fargate-ecs-exec-errors)
