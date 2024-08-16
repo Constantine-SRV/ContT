@@ -19,9 +19,7 @@ resource "aws_vpc" "simple_vpc" {
 
   tags = {
     Name = "simple_vpc"
-    ENV="DEV"
-    COST=305
-    OWNER="Constantine"
+    ENV="Test"
   }
 }
 
