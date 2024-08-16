@@ -38,5 +38,10 @@ jobs:
         working-directory: ./terraform
 
       - name: Run Terraform command
-        run: terraform ${{ github.event.inputs.command }} -auto-approve
+        run: |
+          if [ "${{ github.event.inputs.command }}" == "plan" ]; then
+            terraform plan
+          else
+            terraform ${{ github.event.inputs.command }} -auto-approve
+          fi
         working-directory: ./terraform
