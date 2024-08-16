@@ -19,6 +19,7 @@ resource "aws_vpc" "simple_vpc" {
 
   tags = {
     Name = "simple_vpc"
+    ENV="Test"
   }
 }
 
@@ -31,6 +32,7 @@ resource "aws_subnet" "simple_subnet" {
 
   tags = {
     Name = "simple_subnet"
+    ENV="Test"
   }
 }
 
@@ -40,6 +42,7 @@ resource "aws_internet_gateway" "simple_igw" {
 
   tags = {
     Name = "simple_igw"
+    ENV="Test"
   }
 }
 
